@@ -1,0 +1,34 @@
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const authRoutes = require('./routes/authRoutes');
+const AppError = require('./utils/AppError');
+const taskRoutes = require('./routes/taskRoutes');
+
+const app = express();
+
+app.use(express.json());
+app.use('/api/tasks', taskRoutes);
+app.use('/api/auth', authRoutes);
+
+app.use((req, res, next) => {
+  next(new AppError(`Маршрут ${req.originalUrl} не знайдено`, 404));
+});
+
+app.use((err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  
+  res.status(err.statusCode).json({
+    success: false,
+    message: err.message || 'Внутрішня помилка сервера'
+  });
+});
+
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('MongoDB connected');
+        app.listen(process.env.PORT, () => {
+            console.log(`Server is running on port ${process.env.PORT}`);
+        });
+    })
+    .catch(err => console.error('Database error:', err));
