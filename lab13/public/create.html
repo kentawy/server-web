@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Додати задачу</title>
+</head>
+<body>
+    <h1>Створення задачі</h1>
+    <form id="createForm">
+        <input type="text" id="title" placeholder="Назва задачі" required><br><br>
+        <textarea id="description" placeholder="Опис задачі" required></textarea><br><br>
+        <label>Статус:</label>
+        <select id="status">
+            <option value="new">Нова</option>
+            <option value="in-progress">В процесі</option>
+            <option value="completed">Виконана</option>
+        </select><br><br>
+        <label>Пріоритет:</label>
+        <select id="priority">
+            <option value="low">Низький</option>
+            <option value="medium" selected>Середній</option>
+            <option value="high">Високий</option>
+        </select><br><br>
+        <label>Дата виконання:</label>
+        <input type="date" id="dueDate" required><br><br>
+
+        <button type="submit">Додати</button>
+    </form>
+    <p id="message" style="color: red;"></p>
+    <a href="/index.html">На головну</a>
+
+    <script>
+        // Перевіряємо чи є токен відразу при завантаженні сторінки
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Перевіряємо токен ще раз перед відправкою (раптом користувач його видалив)
+            const tokenOnSubmit = localStorage.getItem('token');
+            if (!tokenOnSubmit) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const body = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                status: document.getElementById('status').value,
+                priority: document.getElementById('priority').value,
+                dueDate: document.getElementById('dueDate').value
+            };
+
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokenOnSubmit}`
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    document.getElementById('message').textContent = data.message;
+                    return;
+                }
+
+                document.getElementById('message').style.color = 'green';
+                document.getElementById('message').textContent = 'Задачу успішно додано!';
+                setTimeout(() => window.location.href = '/index.html', 1000);
+            } catch (err) {
+                document.getElementById('message').textContent = 'Помилка мережі';
+            }
+        });
+    </script>
+</body>
+</html>
